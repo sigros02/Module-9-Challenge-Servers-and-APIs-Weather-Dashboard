@@ -1,73 +1,93 @@
-// import dotenv from "dotenv";
-// dotenv.config();
+import dotenv from "dotenv";
+// import { exec } from "node:child_process";
+dotenv.config();
 
-// // TODO: Define an interface for the Coordinates object
-// // https://api.openweathermap.org/data/2.5/weather?q=London&appid=137501ea7b0c14a9b665c7075d583225
-// interface Coordinates {
-//   lat: number;
-//   lon: number;
-// }
+// TODO: Define an interface for the Coordinates object
+// https://api.openweathermap.org/data/2.5/weather?q=London&appid=137501ea7b0c14a9b665c7075d583225
+class Coordinates {
+  lat: number;
+  lon: number;
 
-// // TODO: Define a class for the Weather object
-// class Weather {
-//   constructor(
-//     public city: string,
-//     public date: string,
-//     public description: string,
-//     public icon: string,
-//     public temperature: number,
-//     public humidity: number,
-//     public wind: number,
-//     public forecast: Weather[]
-//   ) {
-//     this.city = city;
-//     this.date = date;
-//     this.description = description;
-//     this.icon = icon;
-//     this.temperature = temperature;
-//     this.humidity = humidity;
-//     this.wind = wind;
-//     this.forecast = forecast;
-//   }
-// }
+  constructor(lat: number, lon: number) {
+    this.lat = lat;
+    this.lon = lon;
+  }
+}
+// date, icon, iconDescription, tempF, windSpeed, humidity
+// TODO: Define a class for the Weather object
+class Weather {
+  constructor(
+    public date: string,
+    public description: string,
+    public humidity: number,
+    public icon: string,
+    public temperature: number,
+    public wind: number
+  ) {
+    this.date = date;
+    this.description = description;
+    this.icon = icon;
+    this.temperature = temperature;
+    this.humidity = humidity;
+    this.wind = wind;
+  }
+}
 
-// // TODO: Complete the WeatherService class
-// class WeatherService {
-//   // TODO: Define the baseURL, API key, and city name properties
-//   constructor(
-//     private baseURL: string,
-//     private apiKey: string,
-//     private city: string
-//   ) {
-//     this.baseURL = baseURL;
-//     this.apiKey = process.env.API_KEY || "";
-//     this.city = "";
-//   }
-//   // TODO: Create fetchLocationData method
-//   private async fetchLocationData(query: string) {
-//     const response = await fetch(query);
-//     return response.json();
-//   }
-//   // TODO: Create destructureLocationData method
-//   // private destructureLocationData(locationData: Coordinates): Coordinates {}
-//   // TODO: Create buildGeocodeQuery method
-//   // private buildGeocodeQuery(): string {}
-//   // TODO: Create buildWeatherQuery method
-//   // private buildWeatherQuery(coordinates: Coordinates): string {}
-//   // TODO: Create fetchAndDestructureLocationData method
-//   // private async fetchAndDestructureLocationData() {}
-//   // TODO: Create fetchWeatherData method
-//   // private async fetchWeatherData(coordinates: Coordinates) {}
-//   // TODO: Build parseCurrentWeather method
-//   // private parseCurrentWeather(response: any) {}
-//   // TODO: Complete buildForecastArray method
-//   // private buildForecastArray(currentWeather: Weather, weatherData: any[]) {}
-//   // TODO: Complete getWeatherForCity method
-//   // async getWeatherForCity(city: string) {}
-// }
+// TODO: Complete the WeatherService class
+class WeatherService {
+  // TODO: Define the baseURL, API key, and city name properties
+  private baseURL?: string;
+  private apiKey?: string;
+  private cityName?: string;
+  constructor() {
+    this.baseURL = process.env.API_BASE_URL || "";
+    this.apiKey = process.env.API_KEY || "";
+    this.cityName = "";
+  }
 
-// export default new WeatherService(
-//   "https://api.openweathermap.org/data/2.5",
-//   process.env.API_KEY || "",
-//   "London"
-// );
+  async getCityLocationData(cityName: string) {
+    let cityLocation = await this.executeCoordinatesQuery(cityName);
+    return new Coordinates(cityLocation.lat, cityLocation.lon);
+  }
+  // SG: https://openweathermap.org/api/geocoding-api
+  async executeCoordinatesQuery(cityName: string) {
+    this.cityName = cityName;
+    const response = await fetch(
+      `${this.baseURL}/geo/1.0/direct?q=${this.cityName}&limit=1&appid=${this.apiKey}`
+    );
+    const coordinates = await response.json();
+    // SG: allow user to select from available cities
+    return coordinates[0];
+  }
+  // TODO: Create buildWeatherQuery method
+  async executeWeatherQuery(coordinates: Coordinates) {
+    const response = await fetch(
+      `${this.baseURL}/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lat}&appid=${this.apiKey}`
+    );
+    const weather = await response.json();
+    return weather;
+  }
+  async fetchAndDestructureWeatherData(coordinates: Coordinates) {
+    let weatherData = await this.executeWeatherQuery(coordinates);
+    return weatherData.list.map(this.parseWeatherData);
+  }
+  parseWeatherData(reading: any) {
+    return new Weather(
+      reading.dt_txt,
+      reading.weather[0].description,
+      reading.main.humidity,
+      reading.weather[0].icon,
+      reading.main.temp,
+      reading.wind.speed
+    );
+  }
+  // TODO: Create fetchWeatherData method
+  // private async fetchWeatherData(coordinates: Coordinates) {}
+  // TODO: Build parseCurrentWeather method
+  // private parseCurrentWeather(response: any) {}
+  // TODO: Complete buildForecastArray method
+  // private buildForecastArray(currentWeather: Weather, weatherData: any[]) {}
+  // TODO: Complete getWeatherForCity method
+}
+
+export default new WeatherService();
