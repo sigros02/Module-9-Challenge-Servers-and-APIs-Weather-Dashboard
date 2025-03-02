@@ -61,8 +61,8 @@ const fetchSearchHistory = async () => {
   return history;
 };
 
-const deleteCityFromHistory = async (id: string) => {
-  await fetch(`/api/weather/history/${id}`, {
+const deleteCityFromHistory = async (cityName: string) => {
+  await fetch(`/api/weather/history/${cityName}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -75,9 +75,9 @@ const deleteCityFromHistory = async (id: string) => {
 Render Functions
 
 */
-
+// city, date, description, humidity, icon, temperature, wind
 const renderCurrentWeather = (currentWeather: any): void => {
-  const { city, date, icon, iconDescription, tempF, windSpeed, humidity } =
+  const { city, date, description, humidity, icon, temperature, wind } =
     currentWeather;
 
   // convert the following to typescript
@@ -86,11 +86,11 @@ const renderCurrentWeather = (currentWeather: any): void => {
     "src",
     `https://openweathermap.org/img/w/${icon}.png`
   );
-  weatherIcon.setAttribute("alt", iconDescription);
+  weatherIcon.setAttribute("alt", description);
   weatherIcon.setAttribute("class", "weather-img");
   heading.append(weatherIcon);
-  tempEl.textContent = `Temp: ${tempF}°F`;
-  windEl.textContent = `Wind: ${windSpeed} MPH`;
+  tempEl.textContent = `Temp: ${temperature}°F`;
+  windEl.textContent = `Wind: ${wind} MPH`;
   humidityEl.textContent = `Humidity: ${humidity} %`;
 
   if (todayContainer) {
@@ -272,8 +272,9 @@ const handleSearchHistoryClick = (event: any) => {
 
 const handleDeleteHistoryClick = (event: any) => {
   event.stopPropagation();
-  const cityID = JSON.parse(event.target.getAttribute("data-city")).name;
-  deleteCityFromHistory(cityID).then(getAndRenderHistory);
+  const cityName = JSON.parse(event.target.getAttribute("data-city")).name;
+  console.log("cityName: ", cityName);
+  deleteCityFromHistory(cityName).then(getAndRenderHistory);
 };
 
 /*

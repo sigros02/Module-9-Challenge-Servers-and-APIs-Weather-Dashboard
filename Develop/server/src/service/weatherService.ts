@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 // import { exec } from "node:child_process";
 dotenv.config();
 
-// TODO: Define an interface for the Coordinates object
 // https://api.openweathermap.org/data/2.5/weather?q=London&appid=137501ea7b0c14a9b665c7075d583225
 class Coordinates {
   lat: number;
@@ -13,10 +12,11 @@ class Coordinates {
     this.lon = lon;
   }
 }
-// date, icon, iconDescription, tempF, windSpeed, humidity
-// TODO: Define a class for the Weather object
+// city, date, icon, iconDescription, tempF, windSpeed, humidity
+// city, date, description, humidity, icon, temperature, wind
 class Weather {
   constructor(
+    public city: string,
     public date: string,
     public description: string,
     public humidity: number,
@@ -24,6 +24,7 @@ class Weather {
     public temperature: number,
     public wind: number
   ) {
+    this.city = city;
     this.date = date;
     this.description = description;
     this.icon = icon;
@@ -33,9 +34,7 @@ class Weather {
   }
 }
 
-// TODO: Complete the WeatherService class
 class WeatherService {
-  // TODO: Define the baseURL, API key, and city name properties
   private baseURL?: string;
   private apiKey?: string;
   private cityName?: string;
@@ -59,20 +58,27 @@ class WeatherService {
     // SG: allow user to select from available cities
     return coordinates[0];
   }
-  // TODO: Create buildWeatherQuery method
   async executeWeatherQuery(coordinates: Coordinates) {
     const response = await fetch(
-      `${this.baseURL}/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lat}&appid=${this.apiKey}`
+      `${this.baseURL}/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lat}&appid=${this.apiKey}&units=imperial&cnt=6`
     );
     const weather = await response.json();
     return weather;
   }
-  async fetchAndDestructureWeatherData(coordinates: Coordinates) {
+  async fetchAndDestructureWeatherData(
+    cityName: string,
+    coordinates: Coordinates
+  ) {
     let weatherData = await this.executeWeatherQuery(coordinates);
-    return weatherData.list.map(this.parseWeatherData);
+    weatherData.list.map((listArrayEntry: any) => {
+      listArrayEntry.city = cityName;
+    });
+    let destructuredWeatherData = weatherData.list.map(this.parseWeatherData);
+    return destructuredWeatherData;
   }
   parseWeatherData(reading: any) {
     return new Weather(
+      reading.city,
       reading.dt_txt,
       reading.weather[0].description,
       reading.main.humidity,
