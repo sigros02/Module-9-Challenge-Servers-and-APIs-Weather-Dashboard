@@ -118,7 +118,7 @@ const renderForecast = (forecast: any): void => {
 };
 
 const renderForecastCard = (forecast: any) => {
-  const { date, icon, iconDescription, tempF, windSpeed, humidity } = forecast;
+  const { date, description, humidity, icon, temperature, wind } = forecast;
 
   const { col, cardTitle, weatherIcon, tempEl, windEl, humidityEl } =
     createForecastCard();
@@ -129,9 +129,9 @@ const renderForecastCard = (forecast: any) => {
     "src",
     `https://openweathermap.org/img/w/${icon}.png`
   );
-  weatherIcon.setAttribute("alt", iconDescription);
-  tempEl.textContent = `Temp: ${tempF} °F`;
-  windEl.textContent = `Wind: ${windSpeed} MPH`;
+  weatherIcon.setAttribute("alt", description);
+  tempEl.textContent = `Temp: ${temperature} °F`;
+  windEl.textContent = `Wind: ${wind} MPH`;
   humidityEl.textContent = `Humidity: ${humidity} %`;
 
   if (forecastContainer) {

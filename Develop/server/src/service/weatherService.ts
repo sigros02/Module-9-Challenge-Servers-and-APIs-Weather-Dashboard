@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import moment from "moment";
 // import { exec } from "node:child_process";
 dotenv.config();
 
@@ -48,6 +49,7 @@ class WeatherService {
     let cityLocation = await this.executeCoordinatesQuery(cityName);
     return new Coordinates(cityLocation.lat, cityLocation.lon);
   }
+
   // SG: https://openweathermap.org/api/geocoding-api
   async executeCoordinatesQuery(cityName: string) {
     this.cityName = cityName;
@@ -58,28 +60,52 @@ class WeatherService {
     // SG: allow user to select from available cities
     return coordinates[0];
   }
-  async executeWeatherQuery(coordinates: Coordinates) {
-    const response = await fetch(
-      `${this.baseURL}/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lat}&appid=${this.apiKey}&units=imperial&cnt=6`
+
+  async executeCurrentWeatherQuery(coordinates: Coordinates) {
+    let response = await fetch(
+      `${this.baseURL}/data/2.5/weather?lat=${coordinates.lat}&lon=${coordinates.lat}&appid=${this.apiKey}&units=imperial`
     );
-    const weather = await response.json();
-    return weather;
+    const currentWeather = await response.json();
+    return currentWeather;
   }
+
+  async executeWeatherForecastQuery(coordinates: Coordinates) {
+    let response = await fetch(
+      `${this.baseURL}/data/2.5/forecast?lat=${coordinates.lat}&lon=${coordinates.lat}&appid=${this.apiKey}&units=imperial&cnt=40`
+    );
+    let weatherForecast = await response.json();
+    weatherForecast.list = weatherForecast.list.filter(
+      (_reading: any, index: number) => index % 8 === 0
+    );
+    return weatherForecast;
+  }
+
   async fetchAndDestructureWeatherData(
     cityName: string,
     coordinates: Coordinates
   ) {
-    let weatherData = await this.executeWeatherQuery(coordinates);
-    weatherData.list.map((listArrayEntry: any) => {
+    let currentWeatherData = await this.executeCurrentWeatherQuery(coordinates);
+    let weatherForecastData = await this.executeWeatherForecastQuery(
+      coordinates
+    );
+    currentWeatherData.city = cityName;
+    // SG: add city name to each list entry
+    weatherForecastData.list.map((listArrayEntry: any) => {
       listArrayEntry.city = cityName;
     });
-    let destructuredWeatherData = weatherData.list.map(this.parseWeatherData);
-    return destructuredWeatherData;
+    currentWeatherData = this.parseWeatherData(currentWeatherData);
+    currentWeatherData.date = new Date().toLocaleDateString();
+    weatherForecastData = weatherForecastData.list.map(this.parseWeatherData);
+    const weatherData = [currentWeatherData, ...weatherForecastData];
+    // console.log("*************************************************");
+    // console.log(weatherData);
+    return weatherData;
   }
+
   parseWeatherData(reading: any) {
     return new Weather(
       reading.city,
-      reading.dt_txt,
+      moment(reading.dt_txt).format("l"),
       reading.weather[0].description,
       reading.main.humidity,
       reading.weather[0].icon,
@@ -87,13 +113,6 @@ class WeatherService {
       reading.wind.speed
     );
   }
-  // TODO: Create fetchWeatherData method
-  // private async fetchWeatherData(coordinates: Coordinates) {}
-  // TODO: Build parseCurrentWeather method
-  // private parseCurrentWeather(response: any) {}
-  // TODO: Complete buildForecastArray method
-  // private buildForecastArray(currentWeather: Weather, weatherData: any[]) {}
-  // TODO: Complete getWeatherForCity method
 }
 
 export default new WeatherService();

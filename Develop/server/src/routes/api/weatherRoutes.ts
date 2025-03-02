@@ -64,9 +64,9 @@ function saveCityToHistory(cityName: string) {
   );
   if (duplicateCityIndex !== -1) {
     cityHistory.cities.splice(duplicateCityIndex, 1);
-    cityHistory.cities.unshift(cityName);
+    cityHistory.cities.push(cityName);
   } else {
-    cityHistory.cities.unshift(cityName);
+    cityHistory.cities.push(cityName);
   }
   fs.writeFileSync(SEARCH_HISTORY_FILE_NAME, JSON.stringify(cityHistory));
 }
